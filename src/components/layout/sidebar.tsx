@@ -32,7 +32,8 @@ export function Sidebar() {
         ]
         : [
             // Editor only sees Data Entry
-            { name: 'Data Entry', href: '/entry', icon: FileText },
+            // Editor only sees Data Entry
+            { name: 'Data Entry', href: '/entry', icon: ClipboardList },
         ]
 
     const settingsItems = isAdmin
