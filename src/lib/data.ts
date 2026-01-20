@@ -244,6 +244,37 @@ export async function getDashboardStats(startDate?: string, endDate?: string): P
     return stats
 }
 
+export async function getAcquisitionStats(startDate?: string, endDate?: string) {
+    let query = supabase
+        .from('performance_entries')
+        .select('link_identifier, revenue, net_revenue, registrations')
+
+    if (startDate) query = query.gte('date', startDate)
+    if (endDate) query = query.lte('date', endDate)
+
+    const { data, error } = await query
+    if (error) throw error
+
+    // Initialize stats
+    const stats = {
+        links: { count: 0, revenue: 0, netRevenue: 0, registrations: 0 },
+        codes: { count: 0, revenue: 0, netRevenue: 0, registrations: 0 }
+    }
+
+    // Process data
+    data?.forEach(entry => {
+        const isLink = entry.link_identifier === 'direct_link'
+        const target = isLink ? stats.links : stats.codes
+
+        target.count++
+        target.revenue += Number(entry.revenue || 0)
+        target.netRevenue += Number(entry.net_revenue || 0)
+        target.registrations += (entry.registrations || 0)
+    })
+
+    return stats
+}
+
 // Team Performance for Leaderboards
 export async function getTeamPerformance(startDate?: string, endDate?: string): Promise<TeamPerformance[]> {
     const teams = await getTeams()

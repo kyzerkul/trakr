@@ -7,11 +7,12 @@ import { useAuth } from '@/lib/auth-context'
 import {
     LayoutDashboard,
     Trophy,
-    FileText,
+    ClipboardList,
     Users,
     Settings,
     LogOut,
     BarChart3,
+    Calendar,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
@@ -25,7 +26,8 @@ export function Sidebar() {
         ? [
             { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
             { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-            { name: 'Data Entry', href: '/entry', icon: FileText },
+            { name: 'Data Entry', href: '/entry', icon: ClipboardList },
+            { name: 'Historique', href: '/transactions', icon: Calendar },
             { name: 'Teams & CMs', href: '/teams', icon: Users },
         ]
         : [

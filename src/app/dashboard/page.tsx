@@ -7,7 +7,7 @@ import { LeaderboardTable } from '@/components/dashboard/leaderboard-table'
 import { PerformanceChart } from '@/components/dashboard/performance-chart'
 import { DonutChart } from '@/components/dashboard/donut-chart'
 import { Users, DollarSign, Wallet, Loader2 } from 'lucide-react'
-import { getDashboardStats, getTeamPerformance, getCMPerformance, getPerformanceEntries } from '@/lib/data'
+import { getDashboardStats, getTeamPerformance, getCMPerformance, getPerformanceEntries, getAcquisitionStats } from '@/lib/data'
 import type { DashboardStats, TeamPerformance, CMPerformance } from '@/lib/types'
 
 export default function DashboardPage() {
@@ -21,6 +21,7 @@ export default function DashboardPage() {
     const [teamsData, setTeamsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; netRevenue: number; growth: number; type: 'team' }[]>([])
     const [cmsData, setCMsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; netRevenue: number; growth: number; type: 'individual' }[]>([])
     const [chartData, setChartData] = useState<{ label: string; value: number }[]>([])
+    const [acquisitionStats, setAcquisitionStats] = useState<{ label: string; value: number; color: string }[]>([])
 
     useEffect(() => {
         loadData()
@@ -32,11 +33,12 @@ export default function DashboardPage() {
             const endDate = new Date().toISOString().split('T')[0]
             const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-            const [statsData, teamPerf, cmPerf, entries] = await Promise.all([
+            const [statsData, teamPerf, cmPerf, entries, acqStats] = await Promise.all([
                 getDashboardStats(startDate, endDate),
                 getTeamPerformance(startDate, endDate),
                 getCMPerformance(startDate, endDate),
-                getPerformanceEntries({ startDate, endDate })
+                getPerformanceEntries({ startDate, endDate }),
+                getAcquisitionStats(startDate, endDate)
             ])
 
             setStats(statsData)
@@ -75,8 +77,10 @@ export default function DashboardPage() {
             })
 
             const chartDataArray = []
+            // Create array of last 30 days including today
             for (let i = 29; i >= 0; i--) {
-                const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000)
+                const date = new Date()
+                date.setDate(date.getDate() - i)
                 const dateStr = date.toISOString().split('T')[0]
                 const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                 chartDataArray.push({
@@ -85,6 +89,16 @@ export default function DashboardPage() {
                 })
             }
             setChartData(chartDataArray)
+
+            // Transform acquisition stats
+            const totalRevenue = acqStats.links.revenue + acqStats.codes.revenue
+            const linkPct = totalRevenue > 0 ? Math.round((acqStats.links.revenue / totalRevenue) * 100) : 0
+            const codePct = totalRevenue > 0 ? Math.round((acqStats.codes.revenue / totalRevenue) * 100) : 0
+
+            setAcquisitionStats([
+                { label: 'Lien URL', value: linkPct, color: '#3b82f6' },
+                { label: 'Code Promo', value: codePct, color: '#64748b' },
+            ])
 
         } catch (error) {
             console.error('Error loading dashboard data:', error)
@@ -150,13 +164,16 @@ export default function DashboardPage() {
                         height={220}
                     />
                 </div>
+
+
+
                 <DonutChart
-                    title="Acquisition Source"
-                    subtitle="Direct Link vs. Promo Code"
+                    title="Source d'acquisition"
+                    subtitle="Lien URL vs. Code Promo (Revenu)"
                     value={0}
-                    segments={[
-                        { label: 'Link Click', value: 50, color: '#3b82f6' },
-                        { label: 'Promo Code', value: 50, color: '#64748b' },
+                    segments={acquisitionStats.length > 0 ? acquisitionStats : [
+                        { label: 'Lien URL', value: 50, color: '#3b82f6' },
+                        { label: 'Code Promo', value: 50, color: '#64748b' },
                     ]}
                 />
             </div>

@@ -24,6 +24,7 @@ export default function DataEntryPage() {
     const [cms, setCMs] = useState<Profile[]>([])
     const [recentEntries, setRecentEntries] = useState<PerformanceEntry[]>([])
     const [formData, setFormData] = useState({
+        date: new Date().toISOString().split('T')[0],
         teamId: '',
         cmId: '',
         bookmakerId: '',
@@ -83,7 +84,7 @@ export default function DataEntryPage() {
             }
 
             const entry = {
-                date: new Date().toISOString().split('T')[0],
+                date: formData.date,
                 team_id: entityType === 'team' ? formData.teamId : null,
                 profile_id: entityType === 'cm' ? formData.cmId : null,
                 bookmaker_id: formData.bookmakerId,
@@ -111,6 +112,7 @@ export default function DataEntryPage() {
                 })
             } else {
                 setFormData({
+                    date: new Date().toISOString().split('T')[0],
                     teamId: '',
                     cmId: '',
                     bookmakerId: '',
@@ -162,16 +164,30 @@ export default function DataEntryPage() {
                             )}
 
                             <form onSubmit={(e) => handleSubmit(e, false)}>
+                                {/* Date Selection */}
+                                <div className="mb-6">
+                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-3 block">
+                                        Date
+                                    </Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.date}
+                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                        className="w-full max-w-[200px]"
+                                        required
+                                    />
+                                </div>
+
                                 {/* Acquisition Type */}
                                 <div className="mb-6">
                                     <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-3 block">
-                                        Acquisition Type
+                                        Type d'acquisition
                                     </Label>
                                     <Tabs value={acquisitionType} onValueChange={(v) => setAcquisitionType(v as 'link' | 'code')}>
                                         <TabsList className="grid w-full max-w-[300px] grid-cols-2">
                                             <TabsTrigger value="link" className="flex items-center gap-2">
                                                 <Link2 className="h-4 w-4" />
-                                                Link
+                                                Lien URL
                                             </TabsTrigger>
                                             <TabsTrigger value="code" className="flex items-center gap-2">
                                                 <Hash className="h-4 w-4" />
