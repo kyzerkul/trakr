@@ -139,16 +139,6 @@ export async function deleteBookmaker(id: string): Promise<void> {
     if (error) throw error
 }
 
-// Timeout helper to prevent hanging requests
-function withTimeout<T>(promise: Promise<T>, ms: number, operation: string): Promise<T> {
-    return Promise.race([
-        promise,
-        new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error(`${operation} timeout after ${ms}ms`)), ms)
-        )
-    ])
-}
-
 // Performance Entries
 export async function createPerformanceEntry(entry: {
     date: string
@@ -163,21 +153,19 @@ export async function createPerformanceEntry(entry: {
 }): Promise<PerformanceEntry> {
     console.log('Creating performance entry:', entry)
 
-    const insertPromise = supabase
+    const result = await supabase
         .from('performance_entries')
         .insert(entry)
         .select()
         .single()
 
-    const { data, error } = await withTimeout(insertPromise, 10000, 'createPerformanceEntry')
-
-    if (error) {
-        console.error('Error creating performance entry:', error)
-        throw error
+    if (result.error) {
+        console.error('Error creating performance entry:', result.error)
+        throw result.error
     }
 
-    console.log('Performance entry created successfully:', data)
-    return data
+    console.log('Performance entry created successfully:', result.data)
+    return result.data
 }
 
 export async function getPerformanceEntries(filters?: {
