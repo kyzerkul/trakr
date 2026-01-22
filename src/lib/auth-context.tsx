@@ -90,27 +90,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function fetchUserRole(userId: string) {
         try {
-            // Add timeout to prevent hanging (3 seconds)
-            const { data, error } = await withTimeout(
-                supabase
-                    .from('admin_users')
-                    .select('role')
-                    .eq('id', userId)
-                    .single(),
-                3000
-            )
+            // Simple query with error handling - no complex timeout wrapper
+            const result = await supabase
+                .from('admin_users')
+                .select('role')
+                .eq('id', userId)
+                .single()
 
-            if (error) {
-                console.warn('Role fetch error (defaulting to admin):', error.message)
-                // Default to admin if role can't be fetched - this allows the app to work
-                // even if admin_users table isn't set up
+            if (result.error) {
+                console.warn('Role fetch error (defaulting to admin):', result.error.message)
                 setRole('admin')
             } else {
-                setRole(data?.role as UserRole)
+                setRole(result.data?.role as UserRole)
             }
         } catch (err) {
-            console.error('Role fetch timeout/error (defaulting to admin):', err)
-            // On timeout or error, default to admin so app is usable
+            console.error('Role fetch exception (defaulting to admin):', err)
             setRole('admin')
         } finally {
             setLoading(false)
