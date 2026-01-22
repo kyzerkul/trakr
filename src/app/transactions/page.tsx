@@ -18,20 +18,13 @@ export default function TransactionsPage() {
     async function loadData() {
         setLoading(true)
         try {
-            // Fetch all entries, let the viewer handle monthly filtering for now?
-            // Or better, fetch a wide range like "this year" or "last 3 months".
-            // For now, let's fetch last 3 months to be safe and simple.
-            // Actually, the viewer handles monthly navigation locally, but expects "entries" passed to it.
-            // Ideally the Viewer would request data, but it's a "Viewer".
-            // Let's fetch the current month + previous month + next month?
-            // To be simple, let's fetch 'everything' or a large window.
-            // Re-reading logic: TransactionsViewer takes "entries".
-            // Let's fetch YTD + last year?
+            // Only fetch last 3 months for performance
+            const today = new Date()
+            const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1)
+            const startDate = threeMonthsAgo.toISOString().split('T')[0]
+            const endDate = today.toISOString().split('T')[0]
 
-            const startDate = '2025-01-01' // Start of "project" time roughly
-            const endDate = new Date().toISOString().split('T')[0]
-
-            const data = await getPerformanceEntries({ startDate: '2020-01-01', endDate }) // Wide range for history
+            const data = await getPerformanceEntries({ startDate, endDate })
             setEntries(data)
         } catch (error) {
             console.error('Error loading transactions:', error)
