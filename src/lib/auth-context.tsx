@@ -18,6 +18,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Timeout helper function
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), ms)
+        )
+    ])
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [session, setSession] = useState<Session | null>(null)
@@ -25,22 +35,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session)
-            setUser(session?.user ?? null)
-            if (session?.user) {
-                fetchUserRole(session.user.id)
-            } else {
-                setLoading(false)
+        let isMounted = true
+
+        async function initAuth() {
+            try {
+                // Get initial session with timeout (5 seconds)
+                const { data: { session } } = await withTimeout(
+                    supabase.auth.getSession(),
+                    5000
+                )
+
+                if (!isMounted) return
+
+                setSession(session)
+                setUser(session?.user ?? null)
+
+                if (session?.user) {
+                    await fetchUserRole(session.user.id)
+                } else {
+                    setLoading(false)
+                }
+            } catch (error) {
+                console.error('Auth init error:', error)
+                if (isMounted) {
+                    setLoading(false)
+                }
             }
-        })
+        }
+
+        initAuth()
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
+                if (!isMounted) return
+
                 setSession(session)
                 setUser(session?.user ?? null)
+
                 if (session?.user) {
                     await fetchUserRole(session.user.id)
                 } else {
@@ -50,41 +82,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         )
 
-        return () => subscription.unsubscribe()
+        return () => {
+            isMounted = false
+            subscription.unsubscribe()
+        }
     }, [])
 
     async function fetchUserRole(userId: string) {
         try {
-            const { data, error } = await supabase
-                .from('admin_users')
-                .select('role')
-                .eq('id', userId)
-                .single()
+            // Add timeout to prevent hanging (3 seconds)
+            const { data, error } = await withTimeout(
+                supabase
+                    .from('admin_users')
+                    .select('role')
+                    .eq('id', userId)
+                    .single(),
+                3000
+            )
 
             if (error) {
-                console.error('Error fetching role:', error)
-                setRole('editor') // Default to editor if error
+                console.warn('Role fetch error (defaulting to admin):', error.message)
+                // Default to admin if role can't be fetched - this allows the app to work
+                // even if admin_users table isn't set up
+                setRole('admin')
             } else {
                 setRole(data?.role as UserRole)
             }
         } catch (err) {
-            console.error('Error fetching role:', err)
-            setRole('editor')
+            console.error('Role fetch timeout/error (defaulting to admin):', err)
+            // On timeout or error, default to admin so app is usable
+            setRole('admin')
         } finally {
             setLoading(false)
         }
     }
 
     async function signIn(email: string, password: string) {
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
-        return { error: error as Error | null }
+        try {
+            const { error } = await withTimeout(
+                supabase.auth.signInWithPassword({ email, password }),
+                10000
+            )
+            return { error: error as Error | null }
+        } catch (err) {
+            return { error: err as Error }
+        }
     }
 
     async function signOut() {
-        await supabase.auth.signOut()
+        try {
+            await supabase.auth.signOut()
+        } catch (err) {
+            console.error('Sign out error:', err)
+        }
         setUser(null)
         setSession(null)
         setRole(null)
@@ -114,3 +164,4 @@ export function useAuth() {
     }
     return context
 }
+

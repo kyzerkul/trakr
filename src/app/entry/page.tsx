@@ -61,6 +61,7 @@ export default function DataEntryPage() {
 
     const handleSubmit = async (e: React.FormEvent, addAnother: boolean = false) => {
         e.preventDefault()
+        console.log('Form submission started')
         setSubmitting(true)
         setMessage(null)
 
@@ -95,12 +96,20 @@ export default function DataEntryPage() {
                 net_revenue: parseFloat(formData.netRevenue) || 0,
             }
 
+            console.log('Calling createPerformanceEntry with:', entry)
             await createPerformanceEntry(entry)
+            console.log('createPerformanceEntry completed successfully')
+
             setMessage({ type: 'success', text: 'Entry saved successfully!' })
 
-            // Refresh recent entries
-            const newEntries = await getRecentEntries(5)
-            setRecentEntries(newEntries)
+            // Refresh recent entries (but don't block on it)
+            console.log('Refreshing recent entries...')
+            getRecentEntries(5)
+                .then(newEntries => {
+                    console.log('Recent entries refreshed:', newEntries.length)
+                    setRecentEntries(newEntries)
+                })
+                .catch(err => console.error('Failed to refresh entries:', err))
 
             if (addAnother) {
                 setFormData({
@@ -122,10 +131,12 @@ export default function DataEntryPage() {
                     netRevenue: '',
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error submitting entry:', error)
-            setMessage({ type: 'error', text: 'Failed to save entry. Please try again.' })
+            const errorMessage = error?.message || 'Failed to save entry. Please try again.'
+            setMessage({ type: 'error', text: errorMessage })
         } finally {
+            console.log('Form submission finished')
             setSubmitting(false)
         }
     }
