@@ -12,7 +12,6 @@ interface LeaderboardItem {
     initials: string
     registrations: number
     deposits: number
-    netRevenue: number
     growth: number
     type: 'team' | 'individual'
 }
@@ -52,7 +51,7 @@ export function LeaderboardTable({
     items,
     showLiveIndicator = false,
     viewAllLink,
-    emptyMessage = "No data yet",
+    emptyMessage = "Aucune donnée",
 }: LeaderboardTableProps) {
     return (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -70,7 +69,7 @@ export function LeaderboardTable({
                 {showLiveIndicator && items.length > 0 && (
                     <Badge variant="outline" className="text-blue-400 border-blue-400/30">
                         <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
-                        Live Data
+                        Live
                     </Badge>
                 )}
             </div>
@@ -92,11 +91,10 @@ export function LeaderboardTable({
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                                    <th className="px-5 py-3 text-left font-medium">Rank</th>
-                                    <th className="px-5 py-3 text-left font-medium">{items[0]?.type === 'team' ? 'Team' : 'Manager'}</th>
-                                    <th className="px-5 py-3 text-right font-medium">Regs</th>
-                                    <th className="px-5 py-3 text-right font-medium">Deposits</th>
-                                    <th className="px-5 py-3 text-right font-medium">Net Rev</th>
+                                    <th className="px-5 py-3 text-left font-medium">Rang</th>
+                                    <th className="px-5 py-3 text-left font-medium">{items[0]?.type === 'team' ? 'Équipe' : 'Manager'}</th>
+                                    <th className="px-5 py-3 text-right font-medium">Inscr.</th>
+                                    <th className="px-5 py-3 text-right font-medium">Dépôts</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -120,16 +118,13 @@ export function LeaderboardTable({
                                                 <span className="font-medium text-foreground">{item.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3 text-right text-muted-foreground">
+                                        <td className="px-5 py-3 text-right font-semibold text-foreground">
                                             {item.registrations.toLocaleString()}
-                                        </td>
-                                        <td className="px-5 py-3 text-right text-muted-foreground">
-                                            {item.deposits.toLocaleString()}
                                         </td>
                                         <td className="px-5 py-3 text-right">
                                             <div className="flex flex-col items-end">
-                                                <span className="font-semibold text-foreground">
-                                                    ${item.netRevenue.toLocaleString()}
+                                                <span className="text-muted-foreground">
+                                                    {item.deposits.toLocaleString()}
                                                 </span>
                                                 {item.growth !== 0 && (
                                                     <span className={cn(
@@ -154,7 +149,7 @@ export function LeaderboardTable({
                                 href={viewAllLink}
                                 className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
                             >
-                                View Full Report →
+                                Voir le rapport complet →
                             </Link>
                         </div>
                     )}

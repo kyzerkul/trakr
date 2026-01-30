@@ -8,12 +8,12 @@ interface BookmakerDistributionChartProps {
 }
 
 export function BookmakerDistributionChart({ stats }: BookmakerDistributionChartProps) {
-    // Top 5 Bookmakers by Net Revenue
+    // Top 5 Bookmakers by Registrations (instead of Net Revenue)
     const topBookmakers = [...stats]
-        .sort((a, b) => b.netRevenue - a.netRevenue)
+        .sort((a, b) => b.registrations - a.registrations)
         .slice(0, 5)
 
-    const totalRevenue = stats.reduce((sum, s) => sum + s.netRevenue, 0) || 1 // Avoid div by zero
+    const totalRegistrations = stats.reduce((sum, s) => sum + s.registrations, 0) || 1 // Avoid div by zero
 
     const chartSegments = topBookmakers.map((stat, index) => {
         // Generate colors (emerald palette)
@@ -21,20 +21,17 @@ export function BookmakerDistributionChart({ stats }: BookmakerDistributionChart
 
         return {
             label: stat.bookmaker.name,
-            value: Math.max(0, stat.netRevenue), // Don't show negative in donut
+            value: Math.max(0, stat.registrations),
             color: colors[index % colors.length]
         }
     })
 
-    // If there are others, add an "Others" category?
-    // For simplicity, let's just show top 5
-
     return (
         <DonutChart
             title="Répartition par Bookmaker"
-            subtitle="Top 5 en revenu net"
-            value={totalRevenue} // Not used in segments mode but required by props
-            maxValue={totalRevenue}
+            subtitle="Top 5 en inscriptions"
+            value={totalRegistrations}
+            maxValue={totalRegistrations}
             segments={chartSegments}
             size={200}
         />

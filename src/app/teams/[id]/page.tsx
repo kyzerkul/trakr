@@ -24,7 +24,7 @@ export default function TeamDetailPage() {
     const [view, setView] = useState<'table' | 'calendar'>('table')
     const [loading, setLoading] = useState(true)
     const [team, setTeam] = useState<Team | null>(null)
-    const [stats, setStats] = useState({ registrations: 0, deposits: 0, revenue: 0, netRevenue: 0 })
+    const [stats, setStats] = useState({ registrations: 0, deposits: 0 })
     const [chartData, setChartData] = useState<{ label: string; value: number }[]>([])
     const [entries, setEntries] = useState<PerformanceEntry[]>([])
     const [bookmakerStats, setBookmakerStats] = useState<BookmakerStats[]>([])
@@ -51,10 +51,10 @@ export default function TeamDetailPage() {
             setEntries(entriesData)
             setBookmakerStats(bmStats)
 
-            // Build chart data
+            // Build chart data - based on registrations now
             const dailyData: Record<string, number> = {}
             entriesData.forEach(entry => {
-                dailyData[entry.date] = (dailyData[entry.date] || 0) + Number(entry.net_revenue)
+                dailyData[entry.date] = (dailyData[entry.date] || 0) + (entry.registrations || 0)
             })
 
             const chartDataArray = []
@@ -122,12 +122,10 @@ export default function TeamDetailPage() {
                 <Badge className="ml-auto bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard title="Inscriptions" value={stats.registrations} variant="default" />
-                <StatCard title="Dépôts" value={stats.deposits} variant="default" />
-                <StatCard title="Revenu Brut" value={`$${stats.revenue.toLocaleString()}`} variant="default" />
-                <StatCard title="Revenu Net" value={`$${stats.netRevenue.toLocaleString()}`} variant="success" />
+            {/* Stats - Only 2 now */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+                <StatCard title="Inscriptions" value={stats.registrations} variant="success" />
+                <StatCard title="Premiers Dépôts" value={stats.deposits} variant="default" />
             </div>
 
             {/* Main Content Grid */}
@@ -137,7 +135,7 @@ export default function TeamDetailPage() {
                 <div className="lg:col-span-2 space-y-8">
                     {/* Chart */}
                     <PerformanceChart
-                        title="Évolution du revenu net"
+                        title="Évolution des inscriptions"
                         subtitle="30 derniers jours"
                         data={chartData}
                         height={300}

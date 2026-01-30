@@ -1,15 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Save, Pencil, X, Link as LinkIcon, ChevronDown, ChevronUp } from 'lucide-react'
 import type { BookmakerStats } from '@/lib/types'
 import { upsertAffiliateLink } from '@/lib/data'
-import { cn } from '@/lib/utils'
 
 interface BookmakerLinksManagerProps {
     stats: BookmakerStats[]
@@ -22,7 +20,6 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
     const [isOpen, setIsOpen] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
     const [editLink, setEditLink] = useState('')
-    const [editCode, setEditCode] = useState('')
     const [saving, setSaving] = useState(false)
 
     async function handleSave(bookmakerId: string) {
@@ -32,8 +29,7 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
                 team_id: entityType === 'team' ? entityId : null,
                 profile_id: entityType === 'profile' ? entityId : null,
                 bookmaker_id: bookmakerId,
-                affiliate_link: editLink || null,
-                promo_code: editCode || null
+                affiliate_link: editLink || null
             })
             await onUpdate()
             setEditingId(null)
@@ -47,7 +43,6 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
     function startEdit(bm: BookmakerStats) {
         setEditingId(bm.bookmaker.id)
         setEditLink(bm.affiliateLink || '')
-        setEditCode(bm.promoCode || '')
     }
 
     return (
@@ -56,7 +51,7 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                        <CardTitle className="text-base">Configuration des Liens & Codes Promo</CardTitle>
+                        <CardTitle className="text-base">Configuration des Liens</CardTitle>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -64,7 +59,7 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
                 </div>
                 {!isOpen && (
                     <p className="text-xs text-muted-foreground mt-1">
-                        Gérer les liens d'affiliation et codes pour {stats.length} bookmakers
+                        Gérer les liens d'affiliation pour {stats.length} bookmakers
                     </p>
                 )}
             </CardHeader>
@@ -77,8 +72,7 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
                                 <TableRow>
                                     <TableHead className="w-[150px]">Bookmaker</TableHead>
                                     <TableHead>Lien Affilié</TableHead>
-                                    <TableHead className="w-[150px]">Code Promo</TableHead>
-                                    <TableHead className="w-[100px]"></TableHead>
+                                    <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -105,22 +99,6 @@ export function BookmakerLinksManager({ stats, entityId, entityType, onUpdate }:
                                                         <span className="text-xs text-muted-foreground italic">Non configuré</span>
                                                     )}
                                                 </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {editingId === bm.bookmaker.id ? (
-                                                <Input
-                                                    value={editCode}
-                                                    onChange={(e) => setEditCode(e.target.value)}
-                                                    placeholder="CODE123"
-                                                    className="h-8 text-xs font-mono"
-                                                />
-                                            ) : (
-                                                bm.promoCode ? (
-                                                    <Badge variant="outline" className="font-mono text-xs">{bm.promoCode}</Badge>
-                                                ) : (
-                                                    <span className="text-xs text-muted-foreground italic">—</span>
-                                                )
                                             )}
                                         </TableCell>
                                         <TableCell>

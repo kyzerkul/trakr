@@ -5,9 +5,8 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout'
 import { StatCard } from '@/components/dashboard/stat-card'
 import { LeaderboardTable } from '@/components/dashboard/leaderboard-table'
 import { PerformanceChart } from '@/components/dashboard/performance-chart'
-import { DonutChart } from '@/components/dashboard/donut-chart'
-import { Users, DollarSign, Wallet, Loader2 } from 'lucide-react'
-import { getDashboardStats, getTeamPerformance, getCMPerformance, getPerformanceEntries, getAcquisitionStats } from '@/lib/data'
+import { Users, Wallet, Loader2 } from 'lucide-react'
+import { getDashboardStats, getTeamPerformance, getCMPerformance, getPerformanceEntries } from '@/lib/data'
 import type { DashboardStats, TeamPerformance, CMPerformance } from '@/lib/types'
 
 export default function DashboardPage() {
@@ -15,13 +14,10 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats>({
         totalRegistrations: 0,
         totalDeposits: 0,
-        totalRevenue: 0,
-        netProfit: 0,
     })
-    const [teamsData, setTeamsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; netRevenue: number; growth: number; type: 'team' }[]>([])
-    const [cmsData, setCMsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; netRevenue: number; growth: number; type: 'individual' }[]>([])
+    const [teamsData, setTeamsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; growth: number; type: 'team' }[]>([])
+    const [cmsData, setCMsData] = useState<{ rank: number; name: string; initials: string; registrations: number; deposits: number; growth: number; type: 'individual' }[]>([])
     const [chartData, setChartData] = useState<{ label: string; value: number }[]>([])
-    const [acquisitionStats, setAcquisitionStats] = useState<{ label: string; value: number; color: string }[]>([])
 
     useEffect(() => {
         loadData()
@@ -33,47 +29,44 @@ export default function DashboardPage() {
             const endDate = new Date().toISOString().split('T')[0]
             const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-            const [statsData, teamPerf, cmPerf, entries, acqStats] = await Promise.all([
+            const [statsData, teamPerf, cmPerf, entries] = await Promise.all([
                 getDashboardStats(startDate, endDate),
                 getTeamPerformance(startDate, endDate),
                 getCMPerformance(startDate, endDate),
                 getPerformanceEntries({ startDate, endDate }),
-                getAcquisitionStats(startDate, endDate)
             ])
 
             setStats(statsData)
 
-            // Transform team data for leaderboard - set growth to 0 if no data
+            // Transform team data for leaderboard
             const transformedTeams = teamPerf.map((t, i) => ({
                 rank: i + 1,
                 name: t.team.name,
                 initials: t.team.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
                 registrations: t.registrations,
                 deposits: t.deposits,
-                netRevenue: t.netRevenue,
-                growth: t.netRevenue > 0 ? t.growth : 0, // Only show growth if there's actual data
+                growth: t.registrations > 0 ? t.growth : 0,
                 type: 'team' as const,
             }))
             setTeamsData(transformedTeams)
 
-            // Transform CM data for leaderboard - set growth to 0 if no data
+            // Transform CM data for leaderboard
             const transformedCMs = cmPerf.map((c, i) => ({
                 rank: i + 1,
                 name: c.profile.full_name || 'Unknown',
                 initials: (c.profile.full_name || 'UN').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
                 registrations: c.registrations,
                 deposits: c.deposits,
-                netRevenue: c.netRevenue,
-                growth: c.netRevenue > 0 ? c.growth : 0, // Only show growth if there's actual data
+                growth: c.registrations > 0 ? c.growth : 0,
                 type: 'individual' as const,
             }))
             setCMsData(transformedCMs)
 
-            // Build chart data from entries
+            // Build chart data from entries - based on registrations now
             const dailyData: Record<string, number> = {}
             entries.forEach(entry => {
                 const date = entry.date
-                dailyData[date] = (dailyData[date] || 0) + Number(entry.net_revenue)
+                dailyData[date] = (dailyData[date] || 0) + (entry.registrations || 0)
             })
 
             const chartDataArray = []
@@ -90,16 +83,6 @@ export default function DashboardPage() {
             }
             setChartData(chartDataArray)
 
-            // Transform acquisition stats
-            const totalRevenue = acqStats.links.revenue + acqStats.codes.revenue
-            const linkPct = totalRevenue > 0 ? Math.round((acqStats.links.revenue / totalRevenue) * 100) : 0
-            const codePct = totalRevenue > 0 ? Math.round((acqStats.codes.revenue / totalRevenue) * 100) : 0
-
-            setAcquisitionStats([
-                { label: 'Lien URL', value: linkPct, color: '#3b82f6' },
-                { label: 'Code Promo', value: codePct, color: '#64748b' },
-            ])
-
         } catch (error) {
             console.error('Error loading dashboard data:', error)
         } finally {
@@ -108,11 +91,11 @@ export default function DashboardPage() {
     }
 
     // Calculate if there's any data to show growth percentages
-    const hasData = stats.totalRevenue > 0 || stats.totalRegistrations > 0
+    const hasData = stats.totalRegistrations > 0 || stats.totalDeposits > 0
 
     if (loading) {
         return (
-            <DashboardLayout title="Global Dashboard" subtitle="Overview of all acquisition metrics">
+            <DashboardLayout title="Dashboard Global" subtitle="Vue d'ensemble des métriques d'acquisition">
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -121,67 +104,39 @@ export default function DashboardPage() {
     }
 
     return (
-        <DashboardLayout title="Global Dashboard" subtitle="Overview of all acquisition metrics">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <DashboardLayout title="Dashboard Global" subtitle="Vue d'ensemble des métriques d'acquisition">
+            {/* Stats Grid - Only 2 cards now */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <StatCard
-                    title="Total Registrations"
+                    title="Inscriptions Totales"
                     value={stats.totalRegistrations.toLocaleString()}
                     change={hasData ? 0 : undefined}
                     trend="neutral"
                     variant="success"
                 />
                 <StatCard
-                    title="Total Deposits"
+                    title="Premiers Dépôts"
                     value={stats.totalDeposits.toLocaleString()}
                     change={hasData ? 0 : undefined}
                     trend="neutral"
                     variant="default"
                 />
-                <StatCard
-                    title="Total Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString()}`}
-                    change={hasData ? 0 : undefined}
-                    trend="neutral"
-                    variant="default"
-                />
-                <StatCard
-                    title="Net Profit"
-                    value={`$${stats.netProfit.toLocaleString()}`}
-                    change={hasData ? 0 : undefined}
-                    trend="neutral"
-                    variant="success"
-                />
             </div>
 
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-                <div className="lg:col-span-2">
-                    <PerformanceChart
-                        title="Net Profit Trend"
-                        subtitle="Last 30 Days"
-                        data={chartData.length > 0 ? chartData : Array.from({ length: 30 }, (_, i) => ({ label: `Day ${i + 1}`, value: 0 }))}
-                        height={220}
-                    />
-                </div>
-
-
-
-                <DonutChart
-                    title="Source d'acquisition"
-                    subtitle="Lien URL vs. Code Promo (Revenu)"
-                    value={0}
-                    segments={acquisitionStats.length > 0 ? acquisitionStats : [
-                        { label: 'Lien URL', value: 50, color: '#3b82f6' },
-                        { label: 'Code Promo', value: 50, color: '#64748b' },
-                    ]}
+            {/* Charts Section - Full width now */}
+            <div className="mb-6">
+                <PerformanceChart
+                    title="Tendance des Inscriptions"
+                    subtitle="30 derniers jours"
+                    data={chartData.length > 0 ? chartData : Array.from({ length: 30 }, (_, i) => ({ label: `Day ${i + 1}`, value: 0 }))}
+                    height={220}
                 />
             </div>
 
             {/* Leaderboards */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                 <LeaderboardTable
-                    title="Top Editor Teams"
+                    title="Top Équipes Éditeurs"
                     items={teamsData.length > 0 ? teamsData : []}
                     showLiveIndicator
                     viewAllLink="/teams"
@@ -196,22 +151,13 @@ export default function DashboardPage() {
             </div>
 
             {/* Bottom Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                        <DollarSign className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Revenue</p>
-                        <p className="text-xl font-bold text-foreground">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
                         <Users className="h-6 w-6 text-amber-500" />
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Registrations</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Inscriptions</p>
                         <p className="text-xl font-bold text-foreground">{stats.totalRegistrations.toLocaleString()}</p>
                     </div>
                 </div>
@@ -220,7 +166,7 @@ export default function DashboardPage() {
                         <Wallet className="h-6 w-6 text-green-500" />
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Deposits</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Premiers Dépôts</p>
                         <p className="text-xl font-bold text-foreground">{stats.totalDeposits.toLocaleString()}</p>
                     </div>
                 </div>

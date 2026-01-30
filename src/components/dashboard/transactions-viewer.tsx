@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List as ListIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -44,8 +43,6 @@ export function TransactionsViewer({ entries, title = "Historique", view: contro
     const daysInMonth = getDaysInMonth(currentDate)
 
     // Filter entries for current month for calendar view
-    // For table view, we might want to show all, or filter by month too?
-    // Let's filter by month for both to be consistent with the navigation
     const currentMonthEntries = entries.filter(entry => {
         const entryDate = new Date(entry.date)
         return entryDate.getMonth() === currentDate.getMonth() &&
@@ -100,15 +97,14 @@ export function TransactionsViewer({ entries, title = "Historique", view: contro
                                     <TableHead>Date</TableHead>
                                     <TableHead>Entité</TableHead>
                                     <TableHead>Bookmaker</TableHead>
-                                    <TableHead>Type</TableHead>
                                     <TableHead className="text-right">Inscriptions</TableHead>
-                                    <TableHead className="text-right">Revenu Net</TableHead>
+                                    <TableHead className="text-right">Dépôts</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {currentMonthEntries.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                                             Aucune donnée pour ce mois
                                         </TableCell>
                                     </TableRow>
@@ -122,18 +118,8 @@ export function TransactionsViewer({ entries, title = "Historique", view: contro
                                                     {(entry.team as Team)?.name || (entry.profile as Profile)?.full_name || 'N/A'}
                                                 </TableCell>
                                                 <TableCell>{(entry.bookmaker as Bookmaker)?.name}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">
-                                                        {entry.link_identifier === 'direct_link' ? 'Lien' : 'Code'}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">{entry.registrations}</TableCell>
-                                                <TableCell className={cn(
-                                                    "text-right font-bold",
-                                                    (entry.net_revenue || 0) >= 0 ? "text-green-500" : "text-red-500"
-                                                )}>
-                                                    ${(entry.net_revenue || 0).toLocaleString()}
-                                                </TableCell>
+                                                <TableCell className="text-right font-semibold">{entry.registrations}</TableCell>
+                                                <TableCell className="text-right text-muted-foreground">{entry.deposits}</TableCell>
                                             </TableRow>
                                         ))
                                 )}
@@ -146,8 +132,8 @@ export function TransactionsViewer({ entries, title = "Historique", view: contro
                     {daysInMonth.map(day => {
                         const dateStr = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
                         const dayEntries = entriesByDate[dateStr] || []
-                        const dayRevenue = dayEntries.reduce((sum, e) => sum + Number(e.net_revenue || 0), 0)
                         const dayRegistrations = dayEntries.reduce((sum, e) => sum + (e.registrations || 0), 0)
+                        const dayDeposits = dayEntries.reduce((sum, e) => sum + (e.deposits || 0), 0)
 
                         // Collect both Team names and CM names
                         const entities = Array.from(new Set(dayEntries.map(e => {
@@ -171,14 +157,12 @@ export function TransactionsViewer({ entries, title = "Historique", view: contro
                                     {dayEntries.length > 0 ? (
                                         <div className="space-y-1 mt-1">
                                             <div className="flex justify-between text-xs">
-                                                <span className="text-muted-foreground scale-90 origin-left">Inscrits:</span>
+                                                <span className="text-muted-foreground scale-90 origin-left">Inscr.:</span>
                                                 <span className="font-semibold">{dayRegistrations}</span>
                                             </div>
                                             <div className="flex justify-between text-xs">
-                                                <span className="text-muted-foreground scale-90 origin-left">Rev. Net:</span>
-                                                <span className={cn("font-bold", dayRevenue >= 0 ? "text-green-600" : "text-red-600")}>
-                                                    ${dayRevenue.toLocaleString()}
-                                                </span>
+                                                <span className="text-muted-foreground scale-90 origin-left">Dépôts:</span>
+                                                <span className="font-medium text-muted-foreground">{dayDeposits}</span>
                                             </div>
                                             {entities.length > 0 && (
                                                 <div className="pt-1.5 text-[10px] text-muted-foreground border-t border-border/50 mt-1.5 truncate">

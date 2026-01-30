@@ -27,7 +27,6 @@ export interface AffiliateLink {
     profile_id: string | null
     bookmaker_id: string
     affiliate_link: string | null
-    promo_code: string | null
     created_at: string
     updated_at: string
     bookmaker?: Bookmaker
@@ -39,11 +38,8 @@ export interface PerformanceEntry {
     profile_id: string | null
     team_id: string | null
     bookmaker_id: string
-    link_identifier: string | null
     registrations: number
     deposits: number
-    revenue: number
-    net_revenue: number
     created_at: string
     profile?: Profile
     team?: Team
@@ -53,15 +49,12 @@ export interface PerformanceEntry {
 export interface DashboardStats {
     totalRegistrations: number
     totalDeposits: number
-    totalRevenue: number
-    netProfit: number
 }
 
 export interface TeamPerformance {
     team: Team
     registrations: number
     deposits: number
-    netRevenue: number
     growth: number
 }
 
@@ -69,7 +62,6 @@ export interface CMPerformance {
     profile: Profile
     registrations: number
     deposits: number
-    netRevenue: number
     growth: number
 }
 
@@ -77,8 +69,6 @@ export interface BookmakerStats {
     bookmaker: Bookmaker
     registrations: number
     deposits: number
-    revenue: number
-    netRevenue: number
     affiliateLink?: string | null
-    promoCode?: string | null
 }
+

@@ -8,14 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Link2, Hash, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getTeams, getBookmakers, getCommunityManagers, createPerformanceEntry, getRecentEntries } from '@/lib/data'
 import type { Team, Bookmaker, Profile, PerformanceEntry } from '@/lib/types'
 
 export default function DataEntryPage() {
-    const [acquisitionType, setAcquisitionType] = useState<'link' | 'code'>('link')
     const [entityType, setEntityType] = useState<'team' | 'cm'>('team')
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
@@ -30,8 +28,6 @@ export default function DataEntryPage() {
         bookmakerId: '',
         registrations: '',
         deposits: '',
-        grossRevenue: '',
-        netRevenue: '',
     })
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -89,18 +85,15 @@ export default function DataEntryPage() {
                 team_id: entityType === 'team' ? formData.teamId : null,
                 profile_id: entityType === 'cm' ? formData.cmId : null,
                 bookmaker_id: formData.bookmakerId,
-                link_identifier: acquisitionType === 'link' ? 'direct_link' : 'promo_code',
                 registrations: parseInt(formData.registrations) || 0,
                 deposits: parseInt(formData.deposits) || 0,
-                revenue: parseFloat(formData.grossRevenue) || 0,
-                net_revenue: parseFloat(formData.netRevenue) || 0,
             }
 
             console.log('Calling createPerformanceEntry with:', entry)
             await createPerformanceEntry(entry)
             console.log('createPerformanceEntry completed successfully')
 
-            setMessage({ type: 'success', text: 'Entry saved successfully!' })
+            setMessage({ type: 'success', text: 'Entrée sauvegardée avec succès!' })
 
             // Refresh recent entries (but don't block on it)
             console.log('Refreshing recent entries...')
@@ -116,8 +109,6 @@ export default function DataEntryPage() {
                     ...formData,
                     registrations: '',
                     deposits: '',
-                    grossRevenue: '',
-                    netRevenue: '',
                 })
             } else {
                 setFormData({
@@ -127,8 +118,6 @@ export default function DataEntryPage() {
                     bookmakerId: '',
                     registrations: '',
                     deposits: '',
-                    grossRevenue: '',
-                    netRevenue: '',
                 })
             }
         } catch (error: any) {
@@ -150,7 +139,7 @@ export default function DataEntryPage() {
 
     if (loading) {
         return (
-            <DashboardLayout title="Daily Performance Entry" subtitle={`Recording metrics for ${today}`}>
+            <DashboardLayout title="Saisie Performance" subtitle={`Enregistrement des métriques pour ${today}`}>
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -159,7 +148,7 @@ export default function DataEntryPage() {
     }
 
     return (
-        <DashboardLayout title="Daily Performance Entry" subtitle={`Recording metrics for ${today}`}>
+        <DashboardLayout title="Saisie Performance" subtitle={`Enregistrement des métriques pour ${today}`}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Form */}
                 <div className="lg:col-span-2">
@@ -187,25 +176,6 @@ export default function DataEntryPage() {
                                         className="w-full max-w-[200px]"
                                         required
                                     />
-                                </div>
-
-                                {/* Acquisition Type */}
-                                <div className="mb-6">
-                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-3 block">
-                                        Type d'acquisition
-                                    </Label>
-                                    <Tabs value={acquisitionType} onValueChange={(v) => setAcquisitionType(v as 'link' | 'code')}>
-                                        <TabsList className="grid w-full max-w-[300px] grid-cols-2">
-                                            <TabsTrigger value="link" className="flex items-center gap-2">
-                                                <Link2 className="h-4 w-4" />
-                                                Lien URL
-                                            </TabsTrigger>
-                                            <TabsTrigger value="code" className="flex items-center gap-2">
-                                                <Hash className="h-4 w-4" />
-                                                Code Promo
-                                            </TabsTrigger>
-                                        </TabsList>
-                                    </Tabs>
                                 </div>
 
                                 {/* Entity Type Selection */}
@@ -300,11 +270,11 @@ export default function DataEntryPage() {
                                     </div>
                                 </div>
 
-                                {/* Performance Metrics */}
+                                {/* Performance Metrics - Simplified */}
                                 <div className="mb-6">
                                     <div className="flex items-center gap-2 mb-4">
                                         <div className="h-2 w-2 rounded-full bg-primary" />
-                                        <Label className="text-sm font-medium">Performance Metrics</Label>
+                                        <Label className="text-sm font-medium">Métriques de Performance</Label>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
@@ -320,7 +290,7 @@ export default function DataEntryPage() {
                                         </div>
                                         <div>
                                             <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                                                Dépôts
+                                                Premiers Dépôts
                                             </Label>
                                             <Input
                                                 type="number"
@@ -328,38 +298,6 @@ export default function DataEntryPage() {
                                                 value={formData.deposits}
                                                 onChange={(e) => setFormData({ ...formData, deposits: e.target.value })}
                                             />
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                                                Revenu Brut
-                                            </Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    className="pl-7"
-                                                    value={formData.grossRevenue}
-                                                    onChange={(e) => setFormData({ ...formData, grossRevenue: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                                                Revenu Net
-                                            </Label>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    placeholder="0.00"
-                                                    className="pl-7"
-                                                    value={formData.netRevenue}
-                                                    onChange={(e) => setFormData({ ...formData, netRevenue: e.target.value })}
-                                                />
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -395,7 +333,7 @@ export default function DataEntryPage() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <CardTitle className="text-base">Entrées récentes</CardTitle>
-                            <a href="#" className="text-sm text-primary hover:underline">Voir tout</a>
+                            <a href="/transactions" className="text-sm text-primary hover:underline">Voir tout</a>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {recentEntries.length === 0 ? (
@@ -410,20 +348,14 @@ export default function DataEntryPage() {
                                             <span className="font-medium text-foreground">
                                                 {(entry.bookmaker as Bookmaker)?.name || 'Unknown'}
                                             </span>
-                                            <span className={cn(
-                                                'font-semibold',
-                                                entry.net_revenue >= 0 ? 'text-green-400' : 'text-red-400'
-                                            )}>
-                                                {entry.net_revenue >= 0 ? '+' : ''}${Math.abs(entry.net_revenue).toFixed(2)}
+                                            <span className="text-sm text-muted-foreground">
+                                                {entry.registrations} insc. / {entry.deposits} dép.
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                                             <span>{(entry.profile as Profile)?.full_name || (entry.team as Team)?.name || 'N/A'}</span>
-                                            <Badge variant="outline" className="text-xs px-1.5 py-0">
-                                                {entry.link_identifier === 'direct_link' ? 'Link' : 'Code'}
-                                            </Badge>
+                                            <span>{entry.date}</span>
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-1">{entry.date}</p>
                                     </div>
                                 ))
                             )}
